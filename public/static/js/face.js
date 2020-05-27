@@ -67,13 +67,14 @@ var face = {
         { faceName: "微笑", facePath: "91_微笑.gif" }
 	],
 	init : function (){
+        //是否显示
 		var isShowImg=false;
 		$(".emotion_btn").click(function(){
 			if(isShowImg==false){
 				isShowImg=true;
 			    if($(".faceDiv").children().length==0){
 					for(var i=0;i<face.facePath.length;i++){
-						$(".faceDiv").append("<img title=\""+face.facePath[i].faceName+"\" src=\"/static/images/face/"+face.facePath[i].facePath+"\" />");
+						$(".faceDiv").append("<img title=\""+face.facePath[i].faceName+"\" src=\"/public/static/images/face/"+face.facePath[i].facePath+"\" />");
 					}
 					$(".faceDiv>img").click(function(){
 						isShowImg=false;

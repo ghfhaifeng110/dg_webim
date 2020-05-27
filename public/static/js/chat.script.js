@@ -1,5 +1,4 @@
 $(document).ready(function(){
-	// Run the init method on document ready:
 	face.init();
 	chat.init();
 });
@@ -65,7 +64,7 @@ var chat = {
 			this.sendMessage();
 		}
 	},
-	sendMessage : function(){		
+	sendMessage : function(){
 		if(!this.data.login) return false;
 		//发送消息操作
 		var text = $('#chattext').val();
@@ -77,7 +76,7 @@ var chat = {
 		}
 
 		if(text.length == 0) return false;
-		
+
 		$("#chattext").val('');
 		chat.data.type = 'message'; //发送消息标志
 
@@ -115,14 +114,14 @@ var chat = {
 
 			chat.print('wsopen',event);
 			//判断是否已经登录过，如果登录过。自动登录。不需要再次输入昵称和邮箱
-			
+
 			// var isLogin = chat.data.storage.getItem("dologin");
 			// if( isLogin ) {
 			// 	var mobile =  chat.data.storage.getItem("mobile");
 			// 	var password =  chat.data.storage.getItem("password");
 			// 	chat.doLogin( mobile , password );
 			// }
-			
+
 		}
 	},
 	wsMessage : function(){
@@ -196,7 +195,7 @@ var chat = {
 					} else {
 						// if(d.data.remains){
 						// 	for(var i = 0 ; i < d.data.remains.length;i++){
-								
+
 						// 		if(chat.data.fd == d.data.remains[i].fd){
 						// 			chat.shake();
 						// 			var msg = d.data.mobile + "在群聊@了你。";
@@ -214,7 +213,7 @@ var chat = {
 				case 3:
 					chat.removeUser('logout',d.data);
 					if(d.data.mine && d.data.action == 'logout'){
-						
+
 						return;
 					}
 					chat.displayError('chatErrorMessage_logout',d.msg,1);
@@ -231,10 +230,10 @@ var chat = {
 				case 6:
 					if(d.data.mine){
 						//如果是自己
-						
+
 					} else {
 						//如果是其他人
-						
+
 					}
 					//删除旧房间该用户
 					chat.changeUser(d.data);
@@ -282,7 +281,7 @@ var chat = {
 			}
 		}
 	},
-	/** 
+	/**
 	 * 当一个用户进来或者刷新页面触发本方法
 	 *
 	 */
@@ -340,9 +339,9 @@ var chat = {
 
 		//显示列表
 		$(".conv-list-pannel .conv-lists-box").hide();
-		$("#" + name + "-lists").show();	
+		$("#" + name + "-lists").show();
 	},
-	
+
 	// The addChatLine method ads a chat entry to the page
 	addChatLine : function(t,params,roomid,code){
 		var markup = cdiv.render(t,params);
@@ -478,14 +477,14 @@ var chat = {
 		//切换左侧菜单
 		chat.changeMenu($("#main-menus li[data='user']"));
 	},
-	
+
 	// This method displays an error message on the top of the page:
 	displayError : function(divID,msg,f){
 		var elem = $('<div>',{
 			id		: divID,
 			html	: msg
 		});
-		
+
 		elem.click(function(){
 			$(this).fadeOut(function(){
 				$(this).remove();
@@ -494,19 +493,19 @@ var chat = {
 		if(f){
 			setTimeout(function(){
 				elem.click();
-			},5000);	
+			},5000);
 		}
 		elem.hide().appendTo('body').slideDown();
 	},
 	chatAudio : function(){
 		if ( $("#chatAudio").length <= 0 ) {
 			$('<audio id="chatAudio"><source src="./static/voices/notify.ogg" type="audio/ogg"><source src="./static/voices/notify.mp3" type="audio/mpeg"><source src="./static/voices/notify.wav" type="audio/wav"></audio>').appendTo('body');
-		} 
+		}
 		$('#chatAudio')[0].play();
 	},
 	shake : function(){
 		$("#layout-main").attr("class", "shake_p");
-		var shake = setInterval(function(){  
+		var shake = setInterval(function(){
 			$("#layout-main").attr("class", "");
 			clearInterval(shake);
 		},200);
@@ -517,7 +516,7 @@ var chat = {
 				event.keyCode = 0;
 				event.cancelBubble = true;
 				return false;
-			} 
+			}
 		}
 	},
 	print:function(flag,obj){
