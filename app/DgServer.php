@@ -8,7 +8,7 @@
  * @author: ghfhaifeng
  * @email: ghfhaifeng@163.com
  */
-//namespace app;
+namespace app;
 
 class DgServer
 {
