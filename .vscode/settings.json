@@ -1,0 +1,7 @@
+{
+    "git.enabled": false,
+    "git.enableStatusBarSync": false,
+    "git.openDiffOnClick": false,
+    "git.pullTags": false,
+    "git.suggestSmartCommit": false
+}

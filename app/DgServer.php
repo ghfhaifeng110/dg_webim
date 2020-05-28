@@ -72,6 +72,8 @@ class DgServer
 	*/
     public function onMessage($server, $frame)
     {
+        echo "onmessage:";
+        echo json_encode($frame);
         $data = json_decode($frame->data,true);
 
         $this->server->task(json_encode($data));
