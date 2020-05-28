@@ -40,10 +40,12 @@ require_once(APP_ROOT."/config/config.php");
 //     require_once($file);
 // }
 
+echo $socket_server_ip;
+
 //加载数据库服务
-require_once(APP_ROOT."/lib/core/Db.php");
-use lib\core\ConnectMysqli;
-$db = new ConnectMysqli($db_config);
+// require_once(APP_ROOT."/lib/core/Db.php");
+// use lib\core\ConnectMysqli;
+// $db = new ConnectMysqli($db_config);
 
 //加载服务
 require_once(APP_ROOT."/app/DgServer.php");

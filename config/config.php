@@ -20,6 +20,7 @@ $db_config = array(
 );
 
 //参数配置
-$socket_server_ip = '127.0.0.1'; //服务器IP地址
-$socket_server_port = 9001; //socket服务器端口
+define("SOCKET_SERVER_IP","127.0.0.1"); //服务器IP地址
+define("SOCKET_SERVER_PORT",9501); //socket服务器端口
+
 $socket_mysql_port = 9508; //socket数据库端口
