@@ -33,10 +33,10 @@ class DgServer
         ));
 
         //客户端与服务器建立连接并完成握手后会回调此函数
-        $this->server->on("open",array($this,"onOpen"));
+        $this->server->on("Open",array($this,"onOpen"));
 
         //服务器收到来自客户端的数据帧
-        $this->server->on("message",array($this,"onMessage"));
+        $this->server->on("Message",array($this,"onMessage"));
 
         //进程任务
         $this->server->on("Task",array($this,"onTask"));
@@ -45,7 +45,7 @@ class DgServer
         $this->server->on("Finish",array($this,"onFinish"));
 
         //客户端连接关闭后
-        $this->server->on("close",array($this,"onClose"));
+        $this->server->on("Close",array($this,"onClose"));
 
         //启动服务器
 		$this->server->start();
@@ -62,7 +62,7 @@ class DgServer
 			'task' => 'open', //进程任务名称
 			'fd' => $request->fd
 		);
-		$this->server->task( json_encode($data) ); //加入进程任务
+		$this->server->task(json_encode($data)); //加入进程任务
 		echo "open\n";
     }
 
@@ -88,8 +88,10 @@ class DgServer
     public function onTask($server, $task_id, $from_id, $data)
     {
 		$pushMsg = array('code'=>0,'msg'=>'','data'=>array());
-
-        $this->server->push($data['fd'], $data);
+        print_r($data);
+        echo $task_id;
+        echo $from_id;
+        //$this->server->push($data['fd'], $data);
         return 'Finished';
     }
 
