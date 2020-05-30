@@ -10,7 +10,8 @@
  */
 
 //数据库配置
-$db_config = array(
+global $db;
+$db = array(
     'host'      => '127.0.0.1',
     'port'      => '3306',
     'user'      => 'db_chat',
