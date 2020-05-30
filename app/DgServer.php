@@ -10,6 +10,12 @@
  */
 namespace app;
 
+use app\Common;
+use app\Chat;
+
+require_once "Common.php";
+require_once "Chat.php";
+
 class DgServer
 {
     //服务对象
@@ -20,14 +26,18 @@ class DgServer
      */
     public function __construct()
     {
+        //初始化其他类
+        Common::init();
+        Chat::init();
+
         //初始化
         $this->server = new \Swoole\WebSocket\Server(SOCKET_SERVER_IP,SOCKET_SERVER_PORT);
 
         //服务参数配置
 		$this->server->set(array(
 			'task_worker_num'     => TASK_WORKER_NUM, //线程个数
-			// 'heartbeat_idle_time' => 600,
-			// 'heartbeat_check_interval' => 60,
+			'heartbeat_idle_time' => 120, //表示一个连接如果120秒内未向服务器发送任何数据，此连接将被强制关闭
+			'heartbeat_check_interval' => 60, //表示每60秒遍历一次
 			'daemonize' => DAEMONIZE, //是否作为守护进程
 			//'log_file' => LOG_FILE,
         ));
@@ -58,12 +68,15 @@ class DgServer
 	*/
     public function onOpen($server,$request)
     {
+        echo Common::getTime().":open\n";
+
         $data = array(
 			'task' => 'open', //进程任务名称
-			'fd' => $request->fd
-		);
-		$this->server->task(json_encode($data)); //加入进程任务
-		echo "open\n";
+            'fd' => $request->fd,
+            'msg_type' => 1, //推送方式，1单推，2群推
+        );
+
+		$this->server->task($data); //加入进程任务
     }
 
     /**
@@ -72,11 +85,33 @@ class DgServer
 	*/
     public function onMessage($server, $frame)
     {
-        echo "onmessage:";
-        echo json_encode($frame);
-        $data = json_decode($frame->data,true);
+        $data = json_decode($frame->data,true); //传送过来的信息内容
+        echo Common::getTime().":onmessage:".json_encode($data)."\n";
 
-        $this->server->task(json_encode($data));
+        switch($data['type']){
+            //登陆
+            case 'login':
+                echo Common::getTime().":登录开始-->";
+				echo "登录原数据：". json_encode($data)."\n";
+				$data = array(
+					'task' => 'login',
+					'params' => array(
+						'mobile' => $data['mobile'],
+						'password' => $data['password'],
+						'last_time' => $data['last_time']
+					),
+                    'fd' => $frame->fd,
+                    'msg_type' => 1
+                );
+
+				echo Common::getTime().":登录数据提交到进程任务。\n";
+				$this->server->task($data);
+                break;
+            //默认操作
+            default:
+                //默认操作，参数不全或错误
+                $this->server->push($frame->fd, json_encode(array('code'=>0,'msg'=>'参数错误!')));
+        }
     }
 
     /**
@@ -87,12 +122,26 @@ class DgServer
 	*/
     public function onTask($server, $task_id, $from_id, $data)
     {
-		$pushMsg = array('code'=>0,'msg'=>'','data'=>array());
-        print_r($data);
-        echo $task_id;
-        echo $from_id;
-        //$this->server->push($data['fd'], $data);
-        return 'Finished';
+        //推送数据格式
+        $pushMsg = array('code'=>0,'msg'=>'','data'=>array());
+
+        switch($data['task']){
+            //socket通道建立来接
+			case 'open':
+				$pushMsg = Chat::open($data);
+				$this->server->push($data['fd'], json_encode($pushMsg));
+                return 'Finished open';
+                break;
+            //登陆
+			case 'login':
+				echo Common::getTime()."登录进程任务中的数据：". json_encode($data,true)."\n";
+				$pushMsg = Chat::doLogin($data);
+                break;
+        }
+
+        echo Common::getTime()."pushMsg数据:".json_encode($pushMsg,JSON_UNESCAPED_UNICODE)."\n";
+		$this->sendMsg($pushMsg,$data['fd'],$data['msg_type']);
+		return "Finished";
     }
 
     /**
@@ -114,7 +163,17 @@ class DgServer
 	*/
     public function sendMsg($pushMsg,$myfd,$msg_type)
     {
-        echo "推送的信息：". json_encode($pushMsg)."\n";
+        echo Common::getTime()."推送的信息：". json_encode($pushMsg)."\n";
+
+        if($msg_type == 1){
+			if($pushMsg['data']['remains'][0]['fd']){
+				$pushMsg['data']['mine'] = 0;
+				echo "\n sendMsg-remains:".json_encode($pushMsg,JSON_UNESCAPED_UNICODE);
+				$this->server->push($pushMsg['data']['remains'][0]['fd'], json_encode($pushMsg));
+			}
+		}else{
+
+        }
     }
 
     /**

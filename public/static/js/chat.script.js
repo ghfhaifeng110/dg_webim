@@ -1,37 +1,42 @@
 $(document).ready(function(){
 	face.init();
-	chat.init();
+	chat.init(); //初始化
 });
 
 //msg_type:信息类型，1：一对一用户聊天
 //receive_mobile:接收信息的用户手机号
 var chat = {
 	data : {
-		wSock       : null,
-		login		: false,
+		wSock       : null, //socket连接
+		login		: false, //是否登录
 		storage     : null,
-		type	    : 1, //1登录标志，2发送信息标志
+		type	    : '', //1登录标志，2发送信息标志
 		fd          : 0,
-		mobile        : "",
-		password       : "",
+		mobile      : "",
+		password    : "",
 		avatar      : "",
 		rds         : [],//所有房间ID
 		crd         : 'a', //当前房间ID
 		remains     : []
-	},
-	init : function (){
-		this.off();
-		chat.data.storage = window.localStorage;
-		this.ws();
-		this.textArea();
-	},
-	doLogin : function( mobile , password ){
+    },
+
+    //初始化聊天信息
+	init:function(){
+		this.off(); //取消回车键功能
+		chat.data.storage = window.localStorage; //本地缓存数据
+		this.ws(); //初始化websocket连接
+		this.textArea(); //初始化界面
+    },
+
+    //登陆并推送信息给服务端
+	doLogin:function(mobile, password){
+
 		if(mobile == '' || password == ''){
 			mobile =  $("#mobile").val();
 			password = $('#password').val();
 		}
-		mobile = $.trim(mobile) ;
-		password = $.trim(password) ;
+		mobile = $.trim(mobile);
+		password = $.trim(password);
 
 		if(mobile == "" || password == ""){
 			chat.displayError('chatErrorMessage_logout',"请输入手机号和密码才可以参与群聊哦～",1);
@@ -43,7 +48,7 @@ var chat = {
 		chat.data.password = password; //密码
 		chat.data.login = true;
 		var json = {"type": chat.data.type,"mobile": mobile,"password": password,'roomid':'a'};
-		chat.wsSend(JSON.stringify(json));
+		chat.wsSend(JSON.stringify(json)); //推送登陆信息
 	},
 	logout : function(){
 		if(!this.data.login) return false;
@@ -98,40 +103,44 @@ var chat = {
 
 		chat.wsSend(JSON.stringify(json));
 		return true;
-	},
-	ws : function(){
-		this.data.wSock = new WebSocket(config.wsserver);
-		this.wsOpen();
-		this.wsMessage();
-		this.wsOnclose();
-		this.wsOnerror();
+    },
+
+    //初始化websocket连接
+	ws:function(){
+		this.data.wSock = new WebSocket(config.wsserver); //初始化建立SOCKET
+		this.wsOpen(); //打开SOCKET连接并判断是否登陆
+		this.wsMessage(); //接受服务端信息
+		this.wsOnclose(); //关闭SOCKET
+		this.wsOnerror(); //SOCKET ERROR
 	},
 	wsSend : function(data){
 		this.data.wSock.send(data);
-	},
-	wsOpen : function (){
-		this.data.wSock.onopen = function( event ){
+    },
 
-			chat.print('wsopen',event);
+    //打开SOCKET连接并判断是否登陆
+	wsOpen:function (){
+		this.data.wSock.onopen = function(event){
+            chat.print('wsopen',event);
+
 			//判断是否已经登录过，如果登录过。自动登录。不需要再次输入昵称和邮箱
-
-			// var isLogin = chat.data.storage.getItem("dologin");
-			// if( isLogin ) {
-			// 	var mobile =  chat.data.storage.getItem("mobile");
-			// 	var password =  chat.data.storage.getItem("password");
-			// 	chat.doLogin( mobile , password );
-			// }
-
+			var isLogin = chat.data.storage.getItem("dologin");
+			if(isLogin){
+				var mobile =  chat.data.storage.getItem("mobile");
+				var password =  chat.data.storage.getItem("password");
+				chat.doLogin(mobile, password); //推送登陆信息给服务端
+			}
 		}
-	},
-	wsMessage : function(){
+    },
+
+    //接收服务端消息
+	wsMessage:function(){
 		this.data.wSock.onmessage=function(event){
 			var d = jQuery.parseJSON(event.data);
 			console.info(d);
 			switch(d.code){
 				//登录
-				case 1:
-					if(d.data.result.is_success > 0){
+				case 'login':
+					if(d.data.result.is_success > 1){
 						chat.displayError('chatErrorMessage_logout',d.data.result.errmsg,1);
 					}else{
 						if(d.data.mine){
@@ -146,31 +155,31 @@ var chat = {
 							chat.loginDiv(d.data);
 
 							//获取好友列表
-							if(d.data.result.friend){
-								var params = [];
-								params['fd'] = d.data.fd;
-								params['time'] = d.data.time;
+							// if(d.data.result.friend){
+							// 	var params = [];
+							// 	params['fd'] = d.data.fd;
+							// 	params['time'] = d.data.time;
 
-								$.each(d.data.result.friend, function(index,item){
-									params['mobile'] = item.mobile;
-									params['avatar'] = item.avatar;
-									chat.addFriendLine('friend',params);
-								});
-							}
+							// 	$.each(d.data.result.friend, function(index,item){
+							// 		params['mobile'] = item.mobile;
+							// 		params['avatar'] = item.avatar;
+							// 		chat.addFriendLine('friend',params);
+							// 	});
+							// }
 
-							//获取群组列表
-							if(d.data.result.group){
-								var params = [];
-								params['fd'] = d.data.fd;
-								params['time'] = d.data.time;
+							// //获取群组列表
+							// if(d.data.result.group){
+							// 	var params = [];
+							// 	params['fd'] = d.data.fd;
+							// 	params['time'] = d.data.time;
 
-								$.each(d.data.result.group, function(index,item){
-									params['name'] = item.name;
-									params['avatar'] = item.avatar;
-									params['id'] = item.group_id;
-									chat.addGroupLine('group',params);
-								});
-							}
+							// 	$.each(d.data.result.group, function(index,item){
+							// 		params['name'] = item.name;
+							// 		params['avatar'] = item.avatar;
+							// 		params['id'] = item.group_id;
+							// 		chat.addGroupLine('group',params);
+							// 	});
+							// }
 						}else{
 							chat.addChatLine('newlogin',d.data,d.data.roomid,d.code);
 							console.info($("div[uname='"+d.data.mobile+"']").length);
@@ -182,87 +191,93 @@ var chat = {
 						}
 					}
 					break;
-				//发送和接收消息
-				case 2:
-					if(d.data.mine == 0){
-						if($("div[id='chatLineHolder_"+ d.data.mobile +"']").length <= 0){
-							$("#chat-lists").append("<div class='msg-items' id='chatLineHolder_"+ d.data.mobile +"' style='display:none;'></div>");
-						}
+			// 	//发送和接收消息
+			// 	case 2:
+			// 		if(d.data.mine == 0){
+			// 			if($("div[id='chatLineHolder_"+ d.data.mobile +"']").length <= 0){
+			// 				$("#chat-lists").append("<div class='msg-items' id='chatLineHolder_"+ d.data.mobile +"' style='display:none;'></div>");
+			// 			}
 
-						chat.chatAudio();
-						chat.addChatLine('chatLine',d.data,d.data.roomid,d.code);
-						$("#chattext").val('');
-					} else {
-						// if(d.data.remains){
-						// 	for(var i = 0 ; i < d.data.remains.length;i++){
+			// 			chat.chatAudio();
+			// 			chat.addChatLine('chatLine',d.data,d.data.roomid,d.code);
+			// 			$("#chattext").val('');
+			// 		} else {
+			// 			// if(d.data.remains){
+			// 			// 	for(var i = 0 ; i < d.data.remains.length;i++){
 
-						// 		if(chat.data.fd == d.data.remains[i].fd){
-						// 			chat.shake();
-						// 			var msg = d.data.mobile + "在群聊@了你。";
-						// 			chat.displayError('chatErrorMessage_logout',msg,0);
-						// 		}
-						// 	}
-						// }
-						//chat.chatAudio();
-						chat.addChatLine('mymessage',d.data,d.data.roomid,d.code);
-						//增加消息
-						chat.showMsgCount(d.data.roomid,'show');
-					}
-					break;
-				//退出
-				case 3:
-					chat.removeUser('logout',d.data);
-					if(d.data.mine && d.data.action == 'logout'){
+			// 			// 		if(chat.data.fd == d.data.remains[i].fd){
+			// 			// 			chat.shake();
+			// 			// 			var msg = d.data.mobile + "在群聊@了你。";
+			// 			// 			chat.displayError('chatErrorMessage_logout',msg,0);
+			// 			// 		}
+			// 			// 	}
+			// 			// }
+			// 			//chat.chatAudio();
+			// 			chat.addChatLine('mymessage',d.data,d.data.roomid,d.code);
+			// 			//增加消息
+			// 			chat.showMsgCount(d.data.roomid,'show');
+			// 		}
+			// 		break;
+			// 	//退出
+			// 	case 3:
+			// 		chat.removeUser('logout',d.data);
+			// 		if(d.data.mine && d.data.action == 'logout'){
 
-						return;
-					}
-					chat.displayError('chatErrorMessage_logout',d.msg,1);
-					break;
-				case 4: //页面初始化
+			// 			return;
+			// 		}
+			// 		chat.displayError('chatErrorMessage_logout',d.msg,1);
+            // 		break;
+                //页面初始化
+				case 'open':
 					chat.initPage(d.data);
 					break;
-				//其它用户退出
-				case 5:
-					if(d.data.mine){
-						chat.displayError('chatErrorMessage_logout',d.msg,1);
-					}
-					break;
-				case 6:
-					if(d.data.mine){
-						//如果是自己
+			// 	//其它用户退出
+			// 	case 5:
+			// 		if(d.data.mine){
+			// 			chat.displayError('chatErrorMessage_logout',d.msg,1);
+			// 		}
+			// 		break;
+			// 	case 6:
+			// 		if(d.data.mine){
+			// 			//如果是自己
 
-					} else {
-						//如果是其他人
+			// 		} else {
+			// 			//如果是其他人
 
-					}
-					//删除旧房间该用户
-					chat.changeUser(d.data);
-					chat.addUserLine('user',d.data);
-					break;
-				//获取最近联系记录
-				case 7:
-					if(d.data){
-						var params = [];
-						params['fd'] = d.fd;
-						params['time'] = d.time;
+			// 		}
+			// 		//删除旧房间该用户
+			// 		chat.changeUser(d.data);
+			// 		chat.addUserLine('user',d.data);
+			// 		break;
+			// 	//获取最近联系记录
+			// 	case 7:
+			// 		if(d.data){
+			// 			var params = [];
+			// 			params['fd'] = d.fd;
+			// 			params['time'] = d.time;
 
-						$.each(d.data,function(index,item){
-							params['mobile'] = item.mobile;
-							params['avatar'] = item.avatar;
+			// 			$.each(d.data,function(index,item){
+			// 				params['mobile'] = item.mobile;
+			// 				params['avatar'] = item.avatar;
 
-							chat.addUserLine('user',params);
-						});
-					}
-					break;
-				default :
+			// 				chat.addUserLine('user',params);
+			// 			});
+			// 		}
+			// 		break;
+			    default :
 					chat.displayError('chatErrorMessage_logout',d.msg,1);
 			}
 		}
-	},
+    },
+
+    //关闭SOCKET
 	wsOnclose : function(){
 		this.data.wSock.onclose = function(event){
+            this.print("websocket close:",event);
 		}
-	},
+    },
+
+    //SOCKET ERROR
 	wsOnerror : function(){
 		this.data.wSock.onerror = function(event){
 			//alert('服务器关闭，请联系QQ:1335244575 开放测试2');
@@ -280,12 +295,13 @@ var chat = {
 				$("#message-"+roomid).text(parseInt(msgtotal)+1);
 			}
 		}
-	},
+    },
+
 	/**
 	 * 当一个用户进来或者刷新页面触发本方法
 	 *
 	 */
-	initPage:function( data ){
+	initPage:function(data){
 		//this.initRooms( data.rooms );
 		//this.initUsers( data.users );
 	},
@@ -323,7 +339,9 @@ var chat = {
 			//$('.input-area').focus();
 			chat.textArea();
 		});
-	},
+    },
+
+    //初始化界面
 	textArea: function(){
 		if(chat.data.login){
 			$('.input-area').fadeIn();
@@ -478,8 +496,8 @@ var chat = {
 		chat.changeMenu($("#main-menus li[data='user']"));
 	},
 
-	// This method displays an error message on the top of the page:
-	displayError : function(divID,msg,f){
+	// 显示错误信息DIV
+	displayError:function(divID,msg,f){
 		var elem = $('<div>',{
 			id		: divID,
 			html	: msg
@@ -509,7 +527,9 @@ var chat = {
 			$("#layout-main").attr("class", "");
 			clearInterval(shake);
 		},200);
-	},
+    },
+
+    //取消回车键功能
 	off : function(){
 		document.onkeydown = function (event){
 			if ( event.keyCode==116){
@@ -518,7 +538,9 @@ var chat = {
 				return false;
 			}
 		}
-	},
+    },
+
+    //打印输出信息
 	print:function(flag,obj){
 		//console.log('----' + flag + ' start-------');
 		console.log(obj);
