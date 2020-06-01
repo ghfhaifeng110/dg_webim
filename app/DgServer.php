@@ -166,10 +166,9 @@ class DgServer
         echo Common::getTime()."推送的信息：". json_encode($pushMsg)."\n";
 
         if($msg_type == 1){
-			if($pushMsg['data']['remains'][0]['fd']){
+			if($pushMsg['data']['fd']){
 				$pushMsg['data']['mine'] = 0;
-				echo "\n sendMsg-remains:".json_encode($pushMsg,JSON_UNESCAPED_UNICODE);
-				$this->server->push($pushMsg['data']['remains'][0]['fd'], json_encode($pushMsg));
+				$this->server->push($pushMsg['data']['fd'], json_encode($pushMsg));
 			}
 		}else{
 
