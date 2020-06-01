@@ -93,7 +93,7 @@ class DgServer
             case 'login':
                 echo Common::getTime().":登录开始-->";
 				echo "登录原数据：". json_encode($data)."\n";
-				$data = array(
+				$datas = array(
 					'task' => 'login',
 					'params' => array(
 						'mobile' => $data['mobile'],
@@ -105,7 +105,7 @@ class DgServer
                 );
 
 				echo Common::getTime().":登录数据提交到进程任务。\n";
-				$this->server->task($data);
+				$this->server->task($datas);
                 break;
             //默认操作
             default:
