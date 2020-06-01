@@ -63,6 +63,7 @@ class Chat
 				$tmp['errmsg'] = '密码错误';
 			}
 		}else{
+            //用户不存在，生成
 			$tmp['is_success'] = 3;
 			$tmp['errmsg'] = '此用户不存在！';
 		}
