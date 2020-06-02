@@ -101,11 +101,17 @@ class DgServer
 						'last_time' => $data['last_time']
 					),
                     'fd' => $frame->fd,
-                    'msg_type' => 1
+                    'msg_type' => 2
                 );
 
 				echo Common::getTime().":登录数据提交到进程任务。\n";
 				$this->server->task($datas);
+                break;
+            //心跳检测
+            case 'ping':
+                $data['fd'] = $frame->fd;
+                $data['code'] = 'ping';
+                $this->server->task($data);
                 break;
             //默认操作
             default:
@@ -123,7 +129,7 @@ class DgServer
     public function onTask($server, $task_id, $from_id, $data)
     {
         //推送数据格式
-        $pushMsg = array('code'=>0,'msg'=>'','data'=>array());
+        $pushMsg = [];
 
         switch($data['task']){
             //socket通道建立来接
@@ -137,11 +143,18 @@ class DgServer
 				echo Common::getTime()."登录进程任务中的数据：". json_encode($data,true)."\n";
 				$pushMsg = Chat::doLogin($data);
                 break;
+            //心跳
+            case 'ping':
+                $this->server->push($data['fd'],json_encode($data));
+                return 'Finished heart';
+                break;
         }
 
-        echo Common::getTime()."pushMsg数据:".json_encode($pushMsg,JSON_UNESCAPED_UNICODE)."\n";
-		$this->sendMsg($pushMsg,$data['fd'],$data['msg_type']);
-		return "Finished";
+        if($pushMsg){
+            echo Common::getTime()."pushMsg数据:".json_encode($pushMsg,JSON_UNESCAPED_UNICODE)."\n";
+            $this->sendMsg($pushMsg,$data['fd'],$data['msg_type']);
+            return "Finished";
+        }
     }
 
     /**
@@ -167,11 +180,21 @@ class DgServer
 
         if($msg_type == 1){
 			if($pushMsg['data']['fd']){
-				$pushMsg['data']['mine'] = 0;
+				$pushMsg['data']['mine'] = 1;
 				$this->server->push($pushMsg['data']['fd'], json_encode($pushMsg));
 			}
 		}else{
+            echo "msgType<>1:".json_encode($pushMsg)."\n";
+			if($pushMsg['data']){
+				foreach ($this->server->connections as $fd) {
+					if($fd){
+						$pushMsg['data']['mine'] = $fd == $pushMsg['data']['fd'] ? 1 :0; //来自其它客户端
 
+						echo "msgType<>1-0:".json_encode($pushMsg)."\n";
+						$this->server->push($fd, json_encode($pushMsg));
+					}
+				}
+			}
         }
     }
 

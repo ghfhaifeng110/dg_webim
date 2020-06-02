@@ -51,31 +51,29 @@ class Chat
 
         $tmp = [];
 
-        echo "select * from chat_user where mobile = '". $data['params']['mobile'] ."'";
-        $user = $db->query("select * from chat_user where mobile = '". $data['params']['mobile'] ."'");
+        $user = $db->getRow("select * from chat_user where mobile = '". $data['params']['mobile'] ."'");
 
-        echo json_encode($user);
+		if($user){
+			if($user['password'] == trim($data['params']['password'])){
+				$tmp['is_success'] = 1;
+				$tmp['user_id'] = $user['id'];
+			}else{
+				$tmp['is_success'] = 2;
+				$tmp['errmsg'] = '密码错误';
+			}
+		}else{
+            //用户不存在，生成
+            echo ("insert into chat_user(mobile,password,add_time) values('".trim($pushMsg['data']['mobile'])."','".trim($data['params']['password'])."','".(date("Y-m-d H:i:s"))."')");
+            $user_id = $db->insert("chat_user",[
+                'mobile' => trim($pushMsg['data']['mobile']),
+                'password' => trim($data['params']['password']),
+                'add_time' => date("Y-m-d H:i:s")
+            ]);
 
-		// if($user){
-		// 	if($user['password'] == md5(trim($data['params']['password']))){
-		// 		$tmp['is_success'] = 1;
-		// 		$tmp['user_id'] = $user['id'];
-		// 	}else{
-		// 		$tmp['is_success'] = 2;
-		// 		$tmp['errmsg'] = '密码错误';
-		// 	}
-		// }else{
-        //     //用户不存在，生成
-        //     echo ("insert into chat_user(mobile,password,add_time) values('".trim($pushMSG['data']['mobile'])."','".md5(trim($pushMSG['data']['password']))."','".(date("Y-m-d H:i:s"))."')");
-        //     $user_id = $db->insert("chat_user",[
-        //         'mobile' => trim($pushMsg['data']['mobile']),
-        //         'password' => md5(trim($pushMsg['data']['password'])),
-        //         'add_time' => date("Y-m-d H:i:s")
-        //     ]);
-
-        //     $tmp['is_success'] = 1;
-		// 	$tmp['user_id'] = $user_id;
-		// }
+            $tmp['is_success'] = 1;
+            $tmp['user_id'] = $user_id;
+            $tmp['errmsg'] = '登陆成功';
+		}
 
 		$pushMsg['data']['result'] = $tmp;
 

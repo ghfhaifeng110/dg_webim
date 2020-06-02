@@ -49,7 +49,9 @@ var chat = {
 		chat.data.login = true;
 		var json = {"type": chat.data.type,"mobile": mobile,"password": password,'roomid':'a'};
 		chat.wsSend(JSON.stringify(json)); //推送登陆信息
-	},
+    },
+
+    //退出
 	logout : function(){
 		if(!this.data.login) return false;
 		chat.data.type = 0;
@@ -119,6 +121,11 @@ var chat = {
 
     //打开SOCKET连接并判断是否登陆
 	wsOpen:function (){
+        //检测重连接心跳是否存在，存在就清掉
+        if (reconnectTimer) {
+            clearTimeout(reconnectTimer);
+        }
+
 		this.data.wSock.onopen = function(event){
             chat.print('wsopen',event);
 
@@ -128,8 +135,21 @@ var chat = {
 				var mobile =  chat.data.storage.getItem("mobile");
 				var password =  chat.data.storage.getItem("password");
 				chat.doLogin(mobile, password); //推送登陆信息给服务端
-			}
-		}
+            }
+
+            //开启心跳检测
+            var time = new Date();
+            lastHealthTime = time.getTime();
+
+            //检测心跳执行
+            if (heartbeatTimer) {
+                clearInterval(heartbeatTimer);
+            }
+
+            heartbeatTimer = setInterval(function() {
+                chat.keepalive();
+            }, checkTime);
+        }
     },
 
     //接收服务端消息
@@ -185,9 +205,9 @@ var chat = {
 							console.info($("div[uname='"+d.data.mobile+"']").length);
 							if($("div[uname='"+d.data.mobile+"']").length <= 0){
 								//更改在线状态
-								//chat.addUserLine('user',d.data);
+								chat.addUserLine('user',d.data);
 							}
-							chat.displayError('chatErrorMessage_login',d.msg,1);
+                            chat.displayError('chatErrorMessage_login', d.data.result.errmsg,1);
 						}
 					}
 					break;
@@ -230,7 +250,12 @@ var chat = {
                 //页面初始化
 				case 'open':
 					chat.initPage(d.data);
-					break;
+                    break;
+                //心跳
+                case 'ping':
+                    var time = new Date();
+                    lastHealthTime = time.getTime(); //更新客户端的最后一次心跳时间
+                    break;
 			// 	//其它用户退出
 			// 	case 5:
 			// 		if(d.data.mine){
@@ -273,7 +298,7 @@ var chat = {
     //关闭SOCKET
 	wsOnclose : function(){
 		this.data.wSock.onclose = function(event){
-            this.print("websocket close:",event);
+            chat.print("websocket close:",event);
 		}
     },
 
@@ -282,7 +307,33 @@ var chat = {
 		this.data.wSock.onerror = function(event){
 			//alert('服务器关闭，请联系QQ:1335244575 开放测试2');
 		}
-	},
+    },
+
+    keepalive:function() {
+        var time = new Date();
+        console.log(time.getTime() - lastHealthTime);
+        // if ((time.getTime() - lastHealthTime) > healthTimeOut) {
+        //     console.log("心跳超时，请连接断开...");
+
+        //     if (heartbeatTimer) {
+        //         clearInterval(heartbeatTimer);
+
+        //         //n秒后重连接
+        //         chat.wsOnclose();
+        //         reconnectTimer = setTimeout(function () {
+        //             chat.wsOpen();
+        //         }, reconnectTime);
+        //     }
+        // } else {
+            console.log("我依然在连接状态");
+            //ws.send(data);
+            var json = {
+                "type": 'ping'
+            };
+            chat.wsSend(JSON.stringify(json));
+        //}
+    },
+
 	showMsgCount:function(roomid,type){
 		if(!this.data.login) {return;}
 		if(type == 'hide'){
@@ -326,7 +377,7 @@ var chat = {
 	},
 	loginDiv : function(data){
 		//获取最近联系记录
-		var json = {"type": 4,"id": data.result.id};
+		var json = {"type": 'getChatLog',"id": data.result.user_id};
 		chat.wsSend(JSON.stringify(json));
 
 		/*设置当前房间*/
@@ -334,9 +385,9 @@ var chat = {
 		/*显示头像*/
 		$('.profile').html(cdiv.render('my',data));
 		$('#loginbox').fadeOut(function(){
-			//$('.input-area').fadeIn();
-			//$('.action-area').fadeIn();
-			//$('.input-area').focus();
+			$('.input-area').fadeIn();
+			$('.action-area').fadeIn();
+			$('.input-area').focus();
 			chat.textArea();
 		});
     },
@@ -371,7 +422,8 @@ var chat = {
 			}
 		}
 		this.scrollDiv('chat-lists');
-	},
+    },
+
 	addUserLine : function(t,params){
 		var markup = cdiv.render(t,params);
 		$('#conv-lists').append(markup);
