@@ -49,33 +49,35 @@ class Chat
 		$pushMsg['data']['mobile'] = $data['params']['mobile'];
 		$pushMsg['data']['time'] = time();
 
-        $tmp = [];
-
         $user = $db->getRow("select * from chat_user where mobile = '". $data['params']['mobile'] ."'");
 
 		if($user){
 			if($user['password'] == trim($data['params']['password'])){
-				$tmp['is_success'] = 1;
-				$tmp['user_id'] = $user['id'];
+				$pushMsg['data']['is_success'] = 1;
+                $pushMsg['data']['user_id'] = $user['id'];
+                $pushMsg['data']['errmsg'] = '登陆成功';
+                $pushMsg['data']['avatar'] = $avatar;
 			}else{
-				$tmp['is_success'] = 2;
-				$tmp['errmsg'] = '密码错误';
+				$pushMsg['data']['is_success'] = 2;
+				$pushMsg['data']['errmsg'] = '密码错误';
 			}
 		}else{
             //用户不存在，生成
-            echo ("insert into chat_user(mobile,password,add_time) values('".trim($pushMsg['data']['mobile'])."','".trim($data['params']['password'])."','".(date("Y-m-d H:i:s"))."')");
+            $avatar_path = rand(1,12);
+            $avatar = '/public/static/images/face/f_'.$avatar_path.".jpg";
+            echo ("insert into chat_user(mobile,password,add_time,avatar) values('".trim($pushMsg['data']['mobile'])."','".trim($data['params']['password'])."','".(date("Y-m-d H:i:s"))."','".$avatar."')");
             $user_id = $db->insert("chat_user",[
                 'mobile' => trim($pushMsg['data']['mobile']),
                 'password' => trim($data['params']['password']),
-                'add_time' => date("Y-m-d H:i:s")
+                'add_time' => date("Y-m-d H:i:s"),
+                'avatar' => $avatar
             ]);
 
-            $tmp['is_success'] = 1;
-            $tmp['user_id'] = $user_id;
-            $tmp['errmsg'] = '登陆成功';
+            $pushMsg['data']['is_success'] = 1;
+            $pushMsg['data']['user_id'] = $user_id;
+            $pushMsg['data']['errmsg'] = '登陆成功';
+            $pushMsg['data']['avatar'] = $avatar;
 		}
-
-		$pushMsg['data']['result'] = $tmp;
 
         unset($data);
 

@@ -160,8 +160,8 @@ var chat = {
 			switch(d.code){
 				//登录
 				case 'login':
-					if(d.data.result.is_success > 1){
-						chat.displayError('chatErrorMessage_logout',d.data.result.errmsg,1);
+					if(d.data.is_success > 1){
+						chat.displayError('chatErrorMessage_logout',d.data.errmsg,1);
 					}else{
 						if(d.data.mine){
 							//mine=1 没有登录
@@ -207,7 +207,7 @@ var chat = {
 								//更改在线状态
 								chat.addUserLine('user',d.data);
 							}
-                            chat.displayError('chatErrorMessage_login', d.data.result.errmsg,1);
+                            chat.displayError('chatErrorMessage_login', d.data.mobile + '上线',1);
 						}
 					}
 					break;
@@ -326,6 +326,7 @@ var chat = {
         //     }
         // } else {
             console.log("我依然在连接状态");
+            console.log(this.data.wSock);
             //ws.send(data);
             var json = {
                 "type": 'ping'
@@ -377,7 +378,7 @@ var chat = {
 	},
 	loginDiv : function(data){
 		//获取最近联系记录
-		var json = {"type": 'getChatLog',"id": data.result.user_id};
+		var json = {"type": 'getChatLog',"id": data.user_id};
 		chat.wsSend(JSON.stringify(json));
 
 		/*设置当前房间*/

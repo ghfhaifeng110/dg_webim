@@ -30,6 +30,12 @@ class DgServer
         Common::init();
         Chat::init();
 
+        $table = new \Swoole\Table(1024);
+        $table->column('fd', \Swoole\Table::TYPE_INT);
+        $table->column('user_id', \Swoole\Table::TYPE_INT);
+        $table->column('data', \Swoole\Table::TYPE_STRING, 255);
+        $table->create();
+
         //初始化
         $this->server = new \Swoole\WebSocket\Server(SOCKET_SERVER_IP,SOCKET_SERVER_PORT);
 
@@ -41,6 +47,8 @@ class DgServer
 			'daemonize' => DAEMONIZE, //是否作为守护进程
 			//'log_file' => LOG_FILE,
         ));
+
+        $this->server->table = $table;
 
         //客户端与服务器建立连接并完成握手后会回调此函数
         $this->server->on("Open",array($this,"onOpen"));
@@ -141,7 +149,14 @@ class DgServer
             //登陆
 			case 'login':
 				echo Common::getTime()."登录进程任务中的数据：". json_encode($data,true)."\n";
-				$pushMsg = Chat::doLogin($data);
+                $pushMsg = Chat::doLogin($data);
+                //加入table
+                $ret = $this->server->table->set($data['fd'], array('user_id' =>$pushMsg['user_id'], 'fd' => $data['fd'], 'data' => json_encode($pushMsg['data'])));
+                if($ret === false){
+                    echo "table error \n";
+                }else{
+                    echo "table ok \n";
+                }
                 break;
             //心跳
             case 'ping':
@@ -185,17 +200,40 @@ class DgServer
 			}
 		}else{
             echo "msgType<>1:".json_encode($pushMsg)."\n";
-			if($pushMsg['data']){
-				foreach ($this->server->connections as $fd) {
-                    echo "fd:".$fd."\n";
-					if($fd){
-						$pushMsg['data']['mine'] = $fd == $pushMsg['data']['fd'] ? 1 :0; //来自其它客户端
+            $user_fd = [];
 
-						echo "msgType<>1-0:".json_encode($pushMsg)."\n";
-						$this->server->push($fd, json_encode($pushMsg));
+            //先循环table，把其他人员信息发送给自己，并记录其他人员fd
+			if($pushMsg['data']){
+				foreach($this->server->table as $row) {
+                    echo "fd:".json_encode($row)."\n";
+                    // $n_data = json_decode($row['data'],true);
+					if($row['fd']){
+                        if($myfd != $row['fd']){
+                            array_push($user_fd,$row['fd']);
+
+                            $row['data'] = json_decode($row['data'],true);
+                            $row['data']['mine'] = 0; //来自其它客户端
+                            $row['code'] = $pushMsg['code'];
+                            echo "msgType<>1-0:".json_encode($row)."\n";
+
+                            $this->server->push($myfd, json_encode($row));
+                        }else{
+                            $pushMsg['data']['mine'] = 1; //来自其它客户端
+                            $this->server->push($myfd, json_encode($pushMsg));
+                        }
 					}
 				}
-			}
+            }
+
+            //判断其他人员信息并把当前人员信息发送给其他人
+            if($user_fd){
+                foreach($user_fd as $fd){
+                    $pushMsg['data']['mine'] = 0; //来自其它客户端
+                    echo "msgType<>1-1:".json_encode($pushMsg)."\n";
+
+                    $this->server->push($fd, json_encode($pushMsg));
+                }
+            }
         }
     }
 
