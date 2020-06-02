@@ -187,6 +187,7 @@ class DgServer
             echo "msgType<>1:".json_encode($pushMsg)."\n";
 			if($pushMsg['data']){
 				foreach ($this->server->connections as $fd) {
+                    echo "fd:".$fd."\n";
 					if($fd){
 						$pushMsg['data']['mine'] = $fd == $pushMsg['data']['fd'] ? 1 :0; //来自其它客户端
 
