@@ -121,6 +121,21 @@ class DgServer
                 $data['code'] = 'ping';
                 $this->server->task($data);
                 break;
+            //发送消息
+            case 'message':
+                echo "消息开始-->";
+				echo "消息原数据：". $frame->data ."\n";
+				$data['task'] = 'message';
+				$data['fd'] = $frame->fd;
+
+				if($data['msg_type'] == 1){
+					$data['receive_user_id'] = $data['receive_user_id'];
+				}else{
+					$data['group_id'] = $data['group_id'];
+				}
+				echo "消息数据提交到进程任务。\n";
+				$this->server->task($data);
+                break;
             //默认操作
             default:
                 //默认操作，参数不全或错误
@@ -163,6 +178,7 @@ class DgServer
                 $this->server->push($data['fd'],json_encode($data));
                 return 'Finished heart';
                 break;
+            //
         }
 
         if($pushMsg){

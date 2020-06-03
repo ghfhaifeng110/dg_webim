@@ -74,8 +74,9 @@
 								</div>
 								<div class="action-area" style="display:none;">
 									<a href="javascript:;" class="send-message-button" onclick="chat.sendMessage()">发送</a>
-									<input type="hidden" name="receive_mobile" id="receive_mobile" value="" />
-									<input type="hidden" name="receive_group" id="receive_group" value="" />
+                                    <input type="hidden" name="msg_type" id="msg_type" value="" />
+                                    <input type="hidden" name="receive_user_id" id="receive_user_id" value="" />
+                                    <input type="hidden" name="receive_group_id" id="receive_group_id" value="" />
 								</div>
 								<div id="loginbox" class="area" style="width:100%;text-align:center;display:block;">
 									<form action="javascript:void(0)" onsubmit="return chat.doLogin('','');">

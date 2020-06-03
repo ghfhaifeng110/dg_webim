@@ -70,15 +70,19 @@ var chat = {
 			event.preventDefault();//避免回车换行
 			this.sendMessage();
 		}
-	},
-	sendMessage : function(){
-		if(!this.data.login) return false;
+    },
+
+    //发送信息
+	sendMessage:function(){
+        if(!this.data.login) return false;
+
 		//发送消息操作
 		var text = $('#chattext').val();
-		var receive_mobile = $("#receive_mobile").val();
-		var receive_group = $("#receive_group").val();
+        var msg_type = $("#msg_type").val();
+        var receive_user_id = $("#receive_user_id").val();
+        var receive_group_id = $("#receive_group_id").val();
 
-		if(receive_mobile == '' && receive_group == ''){
+		if (receive_user_id == '' && receive_group_id == '') {
 			alert("请选择聊天对象!"); return false;
 		}
 
@@ -94,12 +98,14 @@ var chat = {
 		params['avatar'] = chat.data.avatar;
 		var markup = cdiv.render('mymessage',params);
 		//$("#chatLineHolder_" + params.remains[0].mobile).append(markup);
-		if(receive_mobile){
-			//$("#chatLineHolder_" + receive_mobile).append(markup);
-			json = {"type": chat.data.type,"mobile": chat.data.mobile,"avatar": chat.data.avatar,"message": text,"c":'text',"roomid":this.data.crd,'receive_mobile':receive_mobile,'msg_type':1};
+		if(receive_user_id){
+            //单发，指定用户
+			$("#chatLineHolder_" + receive_user_id).append(markup);
+			json = {"type": chat.data.type,"message": text,"c":'text',"roomid":this.data.crd,'receive_user_id':receive_user_id,'msg_type':msg_type};
 		}else{
-			//$("#chatLineHolder_" + receive_group).append(markup);
-			json = {"type": chat.data.type,"mobile": chat.data.mobile,"avatar": chat.data.avatar,"message": text,"c":'text',"roomid":this.data.crd,'receive_mobile':receive_group,'msg_type':2};
+            //群发，分组群发
+			$("#chatLineHolder_" + receive_group_id).append(markup);
+			json = {"type": chat.data.type,"message": text,"c":'text',"roomid":this.data.crd,'receive_group_id':receive_group_id,'msg_type':msg_type};
 		}
 		this.scrollDiv('chat-lists');
 
@@ -164,7 +170,7 @@ var chat = {
 						chat.displayError('chatErrorMessage_logout',d.data.errmsg,1);
 					}else{
 						if(d.data.mine){
-							//mine=1 没有登录
+							//mine=1 自己的信息
 							chat.data.fd = d.data.fd;
 							chat.data.mobile = d.data.mobile;
 							chat.data.avatar = d.data.avatar;
@@ -309,6 +315,7 @@ var chat = {
 		}
     },
 
+    //保持心跳
     keepalive:function() {
         var time = new Date();
         console.log(time.getTime() - lastHealthTime);
@@ -356,7 +363,8 @@ var chat = {
 	initPage:function(data){
 		//this.initRooms( data.rooms );
 		//this.initUsers( data.users );
-	},
+    },
+
 	/**
 	 * 填充房间用户列表
 	 */
@@ -375,16 +383,20 @@ var chat = {
 				$('#conv-lists-' + item).html(users.join(''));
 			}
 		}
-	},
+    },
+
+    //登陆成功后的处理
 	loginDiv : function(data){
 		//获取最近联系记录
 		var json = {"type": 'getChatLog',"id": data.user_id};
-		chat.wsSend(JSON.stringify(json));
+		//chat.wsSend(JSON.stringify(json));
 
 		/*设置当前房间*/
-		this.data.crd = data.roomid;
+        this.data.crd = data.roomid;
+
 		/*显示头像*/
-		$('.profile').html(cdiv.render('my',data));
+        $('.profile').html(cdiv.render('my',data));
+
 		$('#loginbox').fadeOut(function(){
 			$('.input-area').fadeIn();
 			$('.action-area').fadeIn();
@@ -415,16 +427,15 @@ var chat = {
 	// The addChatLine method ads a chat entry to the page
 	addChatLine : function(t,params,roomid,code){
 		var markup = cdiv.render(t,params);
-		if(code == 2){
-			if(params.mine){
-				$("#chatLineHolder_" + params.remains[0].mobile).append(markup);
-			}else{
-				$("#chatLineHolder_" + params.mobile).append(markup);
+		if(code == 'login'){
+			if(!params.mine){
+				$("#chatLineHolder_" + params.user_id).append(markup);
 			}
 		}
 		this.scrollDiv('chat-lists');
     },
 
+    //把用户信息添加到列表
 	addUserLine : function(t,params){
 		var markup = cdiv.render(t,params);
 		$('#conv-lists').append(markup);
@@ -450,16 +461,21 @@ var chat = {
 			$(this).remove();
 			//chat.addChatLine('logout',data,data.oldroomid);
 		});
-	},
+    },
+
+    //把内容显示到指定的标签内
 	scrollDiv:function(t){
 		var mai=document.getElementById(t);
 		mai.scrollTop = mai.scrollHeight+100;//通过设置滚动高度
-	},
-	remind : function(obj){
+    },
+
+    //选择用户
+	remind:function(obj){
 		var msg = $("#chattext").val();
 
-		$("#receive_mobile").val($(obj).attr('uname'));
-		$("#receive_group").val($(obj).attr('group_id'));
+		$("#receive_user_id").val($(obj).attr('user_id'));
+        $("#receive_group_id").val($(obj).attr('group_id'));
+        $("#msg_type").val(1);
 		this.textArea();
 
 		//添加或移除样式，
@@ -471,10 +487,10 @@ var chat = {
 		$("#chat-lists .msg-items").hide();
 
 		//切换聊天内容窗口
-		if($("div[id='chatLineHolder_"+ $(obj).attr('uname') +"']").length <= 0){
+		if($("div[id='chatLineHolder_"+ $(obj).attr('user_id') +"']").length <= 0){
 			$("#chat-lists").append("<div class='msg-items' id='chatLineHolder_"+ $(obj).attr('uname') +"'></div>");
 		}else{
-			$("div[id='chatLineHolder_"+ $(obj).attr('uname') +"']").show();
+			$("div[id='chatLineHolder_"+ $(obj).attr('user_id') +"']").show();
 		}
 	},
 	list : function(obj){

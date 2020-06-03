@@ -15,6 +15,7 @@ var cdiv = {
 	render : function(template,params){
 		var arr = [];
 		switch(template){
+            //我的消息，并显示
 			case 'mymessage':
 				arr = [
 					'<div style="display: block;" class="msg-box"><div class="chat-item me"><div class="clearfix"><div class="avatar"><div class="normal user-avatar" style="background-image: url(',params.avatar,');"></div></div><div class="msg-bubble-box"><div class="msg-bubble-area"><div><div class="msg-bubble"><pre class="text">', params.newmessage,'</pre></div></div></div></div></div></div></div>'
@@ -35,12 +36,16 @@ var cdiv = {
 				arr = [
 					'<div id=\'user-',params.fd,'\' onclick="chat.group(this)" fd="',params.fd,'" group_id="',params.id,'" uname="',params.name,'" class="list-item conv-item context-menu conv-item-company"><i class="iconfont icon-delete-conv tipper-attached"></i><div class="avatar-wrap"><div class="group-avatar"><div class="normal group-logo-avatar" style="background-image: url(',params.avatar,');"></div></div></div><div class="conv-item-content"><div class="title-wrap info"><div class="name-wrap"><p class="name">',params.name,'</p></div><span class="time">',params.time,'</span></div></div></div>'
 				];
-			    break;
+                break;
+
+            //添加用户信息到列表标签
 			case 'user':
 				arr = [
-					'<div id=\'user-',params.fd,'\' onclick="chat.remind(this)" fd="',params.fd,'" uname="',params.mobile,'" class="list-item conv-item context-menu conv-item-company"><i class="iconfont icon-delete-conv tipper-attached"></i><div class="avatar-wrap"><div class="group-avatar"><div class="normal group-logo-avatar" style="background-image: url(',params.avatar,');"></div></div></div><div class="conv-item-content"><div class="title-wrap info"><div class="name-wrap"><p class="name">',params.mobile,'</p></div><span class="time">',params.time,'</span></div></div></div>'
+					'<div id=\'user-',params.user_id,'\' onclick="chat.remind(this)" user_id="',params.user_id,'" fd="',params.fd,'" uname="',params.mobile,'" class="list-item conv-item context-menu conv-item-company"><i class="iconfont icon-delete-conv tipper-attached"></i><div class="avatar-wrap"><div class="group-avatar"><div class="normal group-logo-avatar" style="background-image: url(',params.avatar,');"></div></div></div><div class="conv-item-content"><div class="title-wrap info"><div class="name-wrap"><p class="name">',params.mobile,'</p></div><span class="time">',params.time,'</span></div></div></div>'
 				];
-			    break;
+                break;
+
+            //新用户加入，并提示信息
 			case 'newlogin':
 				arr = [
 					'<div class="chat-status chat-system-notice">系统消息：欢迎&nbsp;',params.mobile,'&nbsp;加入群聊</div>'
@@ -50,7 +55,9 @@ var cdiv = {
 				arr = [
 					'<div class="chat-status chat-system-notice">系统消息：&nbsp;',params.mobile,'&nbsp;退出了群聊</div>'
 				];
-				break;
+                break;
+
+            //显示自己的头像信息
 			case 'my':
 				arr = [
 					'<div class="big-52 with-border user-avatar" uid="',params.fd,'" title="',params.mobile,'" style="background-image: url(',params.avatar,');"></div>'
